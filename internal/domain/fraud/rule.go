@@ -11,86 +11,86 @@ import (
 // RuleType categories the type of fraud rule type RuleType string
 
 const (
-	RuleTypeVelocity RuleType = "velocity"
-	RuleTypeAmount  RuleType = "amount"
+	RuleTypeVelocity   RuleType = "velocity"
+	RuleTypeAmount     RuleType = "amount"
 	RuleTypeGeographic RuleType = "geographic"
-	RuleTypeDevice RuleType = "device"
+	RuleTypeDevice     RuleType = "device"
 	RuleTypeMerchance  RuleType = "merchandise"
-	RuleTypeBehavior RuleType = "behaviorial"
+	RuleTypeBehavior   RuleType = "behaviorial"
 )
 
 // RuleSeverity indicates how serious a rule violation is RuleSeverity string
 
 const (
-	SeverityLow	RuleSeverity = "low"
-	SeverityMedium RuleSeverity = "medium"
-	SeverityHigh RuleSeverity = "high"
+	SeverityLow      RuleSeverity = "low"
+	SeverityMedium   RuleSeverity = "medium"
+	SeverityHigh     RuleSeverity = "high"
 	SeverityCritical RuleSeverity = "critical"
 )
 
 // RuleAction defines what happens when a rule fires type RuleAction string
 
 const (
-	ActionAllow RuleAction = "allow"
-	ActionBlock RuleAction = "block"
-	ActionReview RuleAction = "review"
+	ActionAllow     RuleAction = "allow"
+	ActionBlock     RuleAction = "block"
+	ActionReview    RuleAction = "review"
 	ActionChallenge RuleAction = "challenge"
 )
 
 // Rule represents a fraud detection rule
 // Rules are configurable and versioned - not hardcoded
 type Rule struct {
-	ID		  uuid.UUID     `json:"id"`
-	Name 	  string        `json:"name"`
-	Description string        `json:"description"`
-	Type 	  RuleType      `json:"type"`
-	Severity   RuleSeverity  `json:"severity"`
-	Action 	  RuleAction    `json:"action"`
+	ID          uuid.UUID    `json:"id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Type        RuleType     `json:"type"`
+	Severity    RuleSeverity `json:"severity"`
+	Action      RuleAction   `json:"action"`
 
 	// Configuration - JSON blob for flexibility
 	// Example for velocity: { "max_transactions": 5, "time_window_minutes": 10, "ammount_threshold": "1000" }
-	Config 	  map[string]interface{} `json:"config"`
+	Config map[string]interface{} `json:"config"`
 
 	// Rule management
-	Enabled bool		  `json:"enabled"`
-	Version int		  `json:"version"`
-	CreatedBy uuid.UUID     `json:"created_by"`
+	Enabled   bool      `json:"enabled"`
+	Version   int       `json:"version"`
+	CreatedBy uuid.UUID `json:"created_by"`
 
 	// Timestamps
-	CreatedAt time.time   `json:"created_at"`
-	UpdatedAt time.time   `json:"updated_at"`
-	EffectedAt time.time   `json:"effected_at"`
-	ExpiredAt  *time.time  `json:"expired_at,omitempty"`
+	CreatedAt  time.time  `json:"created_at"`
+	UpdatedAt  time.time  `json:"updated_at"`
+	EffectedAt time.time  `json:"effected_at"`
+	ExpiredAt  *time.time `json:"expired_at,omitempty"`
 }
 
 // RuleEvaluationContext contains all data needed to evaluate rules
 type RuleEvaluationContext struct {
-	TransactionID uuid.UUID           `json:"transaction_id"`
-	UserId uuid.UUID			  `json:"user_id"`	
-	AccountID uuid.UUID		  `json:"account_id"`
-	Amount decimal.Decimal	  `json:"amount"`
-	Currency string 		  `json:"currency"`
-	Timestamp time.Time		  `json:"timestamp"`
+	TransactionID uuid.UUID       `json:"transaction_id"`
+	UserId        uuid.UUID       `json:"user_id"`
+	AccountID     uuid.UUID       `json:"account_id"`
+	Amount        decimal.Decimal `json:"amount"`
+	Currency      string          `json:"currency"`
+	Timestamp     time.Time       `json:"timestamp"`
 
 	// Context data for different rule types
 	Location *GeoLocation
-	Device *DeviceInfo
+	Device   *DeviceInfo
 	Merchant *MerchantInfo
-	Paymen *PaymentInfo
+	Paymen   *PaymentInfo
 
 	// Historical data ( fetched from Redis/DB )
 	RecentTrabsactions []TransactionSummary
-	UserProfile *UserProfile
-	DeviceHistory []DeviceRecord
+	UserProfile        *UserProfile
+	DeviceHistory      []DeviceRecord
 }
 
 // TransactionSummary is a lightweight transaction representation for rule evaluation
 type TransactionSummary struct {
-	ID uuid.UUID		  `json:"id"`
-	Amount decimal.Decimal	  `json:"amount"`
-	Timestamp time.Time		  `json:"timestamp"`
-	Location *GeoLocation	  `json:"location,omitempty"`
-	Status string		  `json:"status"`
+	ID        uuid.UUID       `json:"id"`
+	Amount    decimal.Decimal `json:"amount"`
+	Timestamp time.Time       `json:"timestamp"`
+	Location  *GeoLocation    `json:"location,omitempty"`
+	Status    string          `json:"status"`
 }
 
 // RuleEngine evaluates fraud rules against transactions
@@ -108,8 +108,38 @@ type RuleEngine interface {
 	AddRule(ctx context.Context, rule *Rule) error
 
 	// UpdateRule updates an existing rule
-	UpdateRule( ctx context.Context, rule *Rule) error
+	UpdateRule(ctx context.Context, rule *Rule) error
 
 	// DisableRule disables a rule
 	DisableRule(ctx context.Context, ruleID uuid.UUID) error
+}
+
+// VelocityRuleConfig defines configuration for velocity checks
+type VelocityRuleConfig struct {
+	MaxTransaction  int             `json:"max_transactions"`
+	WindowMinutes   int             `json:"window_minutes"`
+	AmountThreshold decimal.Decimal `json:"amount_threshold,omitempty"`
+	CountOnly       bool            `json:"count_only"` // count transactions or sum amounts
+}
+
+// AmountRuleConfig defines configuration for amount-based rules
+type AmountRuleConfig struct {
+	MinAmount decimal.Decimal  `json:"min_amount,omitempty"`
+	MaxAmount       decimal.Decimal `json:"max_amount,omitempty"`
+	DeviationFactor float64         `json:"deviation_factor,omitempty"` // X times user's average
+}
+
+// GeographicRuleConfig defines configuration for location-based rules
+type GeographicRuleConfig struct {
+	AllowedCountries  []string `json:"allowed_countries,omitempty"`
+	BlockedCountries  []string `json:"blocked_countries,omitempty"`
+	MaxDistanceKm     float64  `json:"max_distance_km,omitempty"`     // Max distance from last known location
+	RequireConsistent bool     `json:"require_consistent"`            // Location must match previous pattern
+}
+
+// DeviceRuleConfig defines configuration for device-based rules
+type DeviceRuleConfig struct {
+	RequireTrustedDevice bool `json:"require_trusted_device"`
+	MaxDevicesPerUser    int  `json:"max_devices_per_user,omitempty"`
+	BlockNewDevices      bool `json:"block_new_devices"`
 }
