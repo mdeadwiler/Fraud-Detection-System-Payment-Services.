@@ -9,7 +9,6 @@ import (
 )
 
 // RuleType categories the type of fraud rule type RuleType string
-
 const (
 	RuleTypeVelocity   RuleType = "velocity"
 	RuleTypeAmount     RuleType = "amount"
@@ -20,7 +19,6 @@ const (
 )
 
 // RuleSeverity indicates how serious a rule violation is RuleSeverity string
-
 const (
 	SeverityLow      RuleSeverity = "low"
 	SeverityMedium   RuleSeverity = "medium"
