@@ -46,3 +46,26 @@ type CaseRepository interface {
 	GetOpenCaseByUser(ctx context.Context, userID uuid.UUID) ([]*FraudCase, error)
 }
 
+// RuleRepository manages fraud detection rules
+type RuleRepository interface {
+	// Create adds new rule
+	Create(ctx context.Context, rule *Rule) error
+
+	// GetByID retrieves a rule by ID
+	GetByID(ctx context.Context, userID uuid.UUID) (*Rule, error)
+
+	// Update updates an existing rule
+	Update(ctx context.Context, rule *Rule) error
+
+	// ListActive retrieves all enabled rules
+	ListActive(ctx context.Context) ([]*Rule, error)
+
+	// ListByType retrieves rules of a specific type
+	ListByType(ctx context.Context, ruleType RuleType) ([]*Rule, error)
+	
+	// Disable disables a rule
+	Disable(ctx context.Context, ruleID uuid.UUID) error
+
+	// GetVersion retrieves a specific version of a rule
+	GetVersion(ctx context.Context, ruleID uuid.UUID, version int) (*Rule, error)
+}
