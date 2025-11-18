@@ -14,8 +14,8 @@ type ScoreWeights struct {
 	Amount decimal.Decimal `json:"amount"`
 	Geographic decimal.Decimal `json:"geographic"`
 	Device decimal.Decimal `json:"device"`
-	Merchandise decimal.Decimal `json:"merchandise"`
-	Behavior decimal.Decimal `json:"behavior"`
+	Merchant decimal.Decimal `json:"merchandise"`
+	Behavioral decimal.Decimal `json:"behavior"`
 	MLModel decimal.Decimal `json:"ml_model"`
 }
 
@@ -42,3 +42,40 @@ const (
 )
 
 // FraudScorer calculates final fraud scores from rule results
+type FraudeScorer interface {
+	// CalculateScorer computes the final fraud score
+	CalculateScore( ctx context.Context, results []RuleResult, weights ScoreWeights) (decimal.Decimal, error) 
+
+	// DetermineDecision decides the action based on score
+	DetermineDecision(ctx context.Context, score decimal.Decimal, riskLevel RiskLevel) (DecisionType, error)
+
+	// GetRiskLevel converts a score to a risk level
+	GetRiskLevel(score decimal.Decimal) RiskLevel
+}
+
+// ScoreCalculationResult contains the detailed scoring breakdown
+type ScoreCalculationResult struct {
+	FinalScore      decimal.Decimal            `json:"final_score"`
+	RiskLevel       RiskLevel                  `json:"risk_level"`
+	Decision        DecisionType               `json:"decision"`
+	RuleContributions map[string]decimal.Decimal `json:"rule_contributions"`
+	Strategy        ScoringStrategy            `json:"strategy"`
+	CalculatedAt    time.Time                  `json:"calculated_at"`
+}
+
+// DecisionThresholds defines score thresholds for decisions
+type DecisionThresholds struct {
+	BlockThreshold     decimal.Decimal // Above this = block
+	ReviewThreshold    decimal.Decimal // Above this = review
+	ChallengeThreshold decimal.Decimal // Above this = challenge
+	// Below challenge threshold = allow
+}
+
+// DefaultDecisionThresholds provides reasonable defaults
+func DefaultDecisionThresholds() DecisionThresholds {
+	return DecisionThresholds{
+		BlockThreshold:     decimal.NewFromFloat(0.80),
+		ReviewThreshold:    decimal.NewFromFloat(0.60),
+		ChallengeThreshold: decimal.NewFromFloat(0.40),
+	}
+}
