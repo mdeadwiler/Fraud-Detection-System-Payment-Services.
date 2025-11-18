@@ -79,3 +79,17 @@ func DefaultDecisionThresholds() DecisionThresholds {
 		ChallengeThreshold: decimal.NewFromFloat(0.40),
 	}
 }
+
+// AggregateRuleResults combines multiple rule results
+func AggregateRuleResults(results []RuleResult, weights ScoreWeights, strategy ScoringStrategy) (*ScoreCalculationResult, error) {
+	switch strategy {
+	case StrategyWeightedAverage:
+		return aggregateWeightedAverage(results, weights)
+	case StrategyMaxScore:
+		return aggregateMaxScore(results)
+	case StrategyBayesian:
+		return aggregateBayesian(results)
+	default:
+		return aggregateWeightedAverage(results, weights)
+	}
+}
