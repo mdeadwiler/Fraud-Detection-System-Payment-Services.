@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
 
@@ -14,8 +13,8 @@ type ScoreWeights struct {
 	Amount     decimal.Decimal `json:"amount"`
 	Geographic decimal.Decimal `json:"geographic"`
 	Device     decimal.Decimal `json:"device"`
-	Merchant   decimal.Decimal `json:"merchandise"`
-	Behavioral decimal.Decimal `json:"behavior"`
+	Merchant   decimal.Decimal `json:"merchant"`
+	Behavioral decimal.Decimal `json:"behavioral"`
 	MLModel    decimal.Decimal `json:"ml_model"`
 }
 
@@ -42,8 +41,8 @@ const (
 )
 
 // FraudScorer calculates final fraud scores from rule results
-type FraudeScorer interface {
-	// CalculateScorer computes the final fraud score
+type FraudScorer interface {
+	// CalculateScore computes the final fraud score
 	CalculateScore(ctx context.Context, results []RuleResult, weights ScoreWeights) (decimal.Decimal, error)
 
 	// DetermineDecision decides the action based on score
@@ -88,7 +87,7 @@ func AggregateRuleResults(results []RuleResult, weights ScoreWeights, strategy S
 	case StrategyMaxScore:
 		return aggregateMaxScore(results)
 	case StrategyBayesian:
-		return aggregateBayesian(results)
+		return aggregateBayesian(results, weights)
 	default:
 		return aggregateWeightedAverage(results, weights)
 	}
@@ -102,13 +101,15 @@ func aggregateWeightedAverage(results []RuleResult, weights ScoreWeights) (*Scor
 		if !result.Fired {
 			continue
 		}
+
 		// Get weight for this rule type (simplified - in production map RuleID to type)
 		weight := getWeightForRule(result.RuleName, weights)
 		contribution := result.Score.Mul(weight)
 
 		totalScore = totalScore.Add(contribution)
-		contributions[results.RuleName] = contribution
+		contributions[result.RuleName] = contribution
 	}
+
 	// Normalize to 0-1 range
 	if totalScore.GreaterThan(decimal.NewFromInt(1)) {
 		totalScore = decimal.NewFromInt(1)
@@ -125,11 +126,11 @@ func aggregateWeightedAverage(results []RuleResult, weights ScoreWeights) (*Scor
 
 func aggregateMaxScore(results []RuleResult) (*ScoreCalculationResult, error) {
 	maxScore := decimal.Zero
-	contributions := make(map[sring]decimal.Decimal)
+	contributions := make(map[string]decimal.Decimal)
 
 	for _, result := range results {
-		if results.Fired && result.Score.GreaterThan(maxScore) {
-			maxScore = results.Score
+		if result.Fired && result.Score.GreaterThan(maxScore) {
+			maxScore = result.Score
 		}
 		if result.Fired {
 			contributions[result.RuleName] = result.Score
@@ -143,4 +144,60 @@ func aggregateMaxScore(results []RuleResult) (*ScoreCalculationResult, error) {
 		Strategy:          StrategyMaxScore,
 		CalculatedAt:      time.Now(),
 	}, nil
+}
+
+func aggregateBayesian(results []RuleResult, weights ScoreWeights) (*ScoreCalculationResult, error) {
+	// Bayesian combination: P(fraud | evidence)
+	// Using naive Bayes assumption for simplicity
+	// In production, train on historical data for better priors
+
+	priorFraudRate := decimal.NewFromFloat(0.01) // 1% base fraud rate
+	posteriorOdds := priorFraudRate.Div(decimal.NewFromInt(1).Sub(priorFraudRate))
+
+	for _, result := range results {
+		if result.Fired {
+			// Likelihood ratio = P(evidence | fraud) / P(evidence | not fraud)
+			// Simplified: use rule score as proxy for likelihood
+			likelihoodRatio := result.Score.Div(decimal.NewFromInt(1).Sub(result.Score))
+			posteriorOdds = posteriorOdds.Mul(likelihoodRatio)
+		}
+	}
+
+	// Convert odds back to probability
+	finalProb := posteriorOdds.Div(decimal.NewFromInt(1).Add(posteriorOdds))
+
+	contributions := make(map[string]decimal.Decimal)
+	for _, result := range results {
+		if result.Fired {
+			contributions[result.RuleName] = result.Score
+		}
+	}
+
+	return &ScoreCalculationResult{
+		FinalScore:        finalProb,
+		RiskLevel:         getRiskLevel(finalProb),
+		RuleContributions: contributions,
+		Strategy:          StrategyBayesian,
+		CalculatedAt:      time.Now(),
+	}, nil
+}
+
+func getRiskLevel(score decimal.Decimal) RiskLevel {
+	scoreFloat := score.InexactFloat64()
+	switch {
+	case scoreFloat >= 0.80:
+		return RiskLevelCritical
+	case scoreFloat >= 0.60:
+		return RiskLevelHigh
+	case scoreFloat >= 0.30:
+		return RiskLevelMedium
+	default:
+		return RiskLevelLow
+	}
+}
+
+func getWeightForRule(ruleName string, weights ScoreWeights) decimal.Decimal {
+	// In production, maintain a mapping of rule names to types
+	// This is simplified for demonstration
+	return decimal.NewFromFloat(0.15)
 }
