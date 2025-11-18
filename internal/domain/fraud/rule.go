@@ -27,3 +27,12 @@ const (
 	SeverityHigh RuleSeverity = "high"
 	SeverityCritical RuleSeverity = "critical"
 )
+
+// RuleAction defines what happens when a rule fires type RuleAction string
+
+const (
+	ActionAllow RuleAction = "allow"
+	ActionBlock RuleAction = "block"
+	ActionReview RuleAction = "review"
+	ActionChallenge RuleAction = "challenge"
+)
