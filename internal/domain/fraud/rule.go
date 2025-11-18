@@ -36,3 +36,14 @@ const (
 	ActionReview RuleAction = "review"
 	ActionChallenge RuleAction = "challenge"
 )
+
+// Rule represents a fraud detection rule
+// Rules are configurable and versioned - not hardcoded
+type Reule struct {
+	ID		  uuid.UUID     `json:"id"`
+	Name 	  string        `json:"name"`
+	Description string        `json:"description"`
+	Type 	  RuleType      `json:"type"`
+	Severity   RuleSeverity  `json:"severity"`
+	Action 	  RuleAction    `json:"action"`
+}
