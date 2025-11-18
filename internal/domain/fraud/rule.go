@@ -39,7 +39,7 @@ const (
 
 // Rule represents a fraud detection rule
 // Rules are configurable and versioned - not hardcoded
-type Reule struct {
+type Rule struct {
 	ID		  uuid.UUID     `json:"id"`
 	Name 	  string        `json:"name"`
 	Description string        `json:"description"`
@@ -91,4 +91,25 @@ type TransactionSummary struct {
 	Timestamp time.Time		  `json:"timestamp"`
 	Location *GeoLocation	  `json:"location,omitempty"`
 	Status string		  `json:"status"`
+}
+
+// RuleEngine evaluates fraud rules against transactions
+type RuleEngine interface {
+	// Evaluate runs all enabled rules against a transaction context
+	Evaluate(ctx context.Context, evalCtx *RuleEvaluationContex) ([]RuleResult, error)
+
+	// EvaluateRule runs specific rule
+	EvaluateRule(ctx context.Context, rule *Rule, evalCtx *RuleEvaluationContext) (*RuleResult, error)
+
+	// GetActiveRules retrieves all currntly active rules
+	GetActiveRule(ctx context.Context) ([]*Rule, error)
+
+	// AddRule adds a new rule to the engine
+	AddRule(ctx context.Context, rule *Rule) error
+
+	// UpdateRule updates an existing rule
+	UpdateRule( ctx context.Context, rule *Rule) error
+
+	// DisableRule disables a rule
+	DisableRule(ctx context.Context, ruleID uuid.UUID) error
 }
