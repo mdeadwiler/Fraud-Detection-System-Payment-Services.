@@ -10,13 +10,13 @@ import (
 
 // ScoreWeights defines how much each rule type contributes to final score
 type ScoreWeights struct {
-	Velocity decimal.Decimal `json:"velocity"`
-	Amount decimal.Decimal `json:"amount"`
+	Velocity   decimal.Decimal `json:"velocity"`
+	Amount     decimal.Decimal `json:"amount"`
 	Geographic decimal.Decimal `json:"geographic"`
-	Device decimal.Decimal `json:"device"`
-	Merchant decimal.Decimal `json:"merchandise"`
+	Device     decimal.Decimal `json:"device"`
+	Merchant   decimal.Decimal `json:"merchandise"`
 	Behavioral decimal.Decimal `json:"behavior"`
-	MLModel decimal.Decimal `json:"ml_model"`
+	MLModel    decimal.Decimal `json:"ml_model"`
 }
 
 // DefaultScoreWeights provides a balanced starting point
@@ -44,7 +44,7 @@ const (
 // FraudScorer calculates final fraud scores from rule results
 type FraudeScorer interface {
 	// CalculateScorer computes the final fraud score
-	CalculateScore( ctx context.Context, results []RuleResult, weights ScoreWeights) (decimal.Decimal, error) 
+	CalculateScore(ctx context.Context, results []RuleResult, weights ScoreWeights) (decimal.Decimal, error)
 
 	// DetermineDecision decides the action based on score
 	DetermineDecision(ctx context.Context, score decimal.Decimal, riskLevel RiskLevel) (DecisionType, error)
@@ -55,12 +55,12 @@ type FraudeScorer interface {
 
 // ScoreCalculationResult contains the detailed scoring breakdown
 type ScoreCalculationResult struct {
-	FinalScore      decimal.Decimal            `json:"final_score"`
-	RiskLevel       RiskLevel                  `json:"risk_level"`
-	Decision        DecisionType               `json:"decision"`
+	FinalScore        decimal.Decimal            `json:"final_score"`
+	RiskLevel         RiskLevel                  `json:"risk_level"`
+	Decision          DecisionType               `json:"decision"`
 	RuleContributions map[string]decimal.Decimal `json:"rule_contributions"`
-	Strategy        ScoringStrategy            `json:"strategy"`
-	CalculatedAt    time.Time                  `json:"calculated_at"`
+	Strategy          ScoringStrategy            `json:"strategy"`
+	CalculatedAt      time.Time                  `json:"calculated_at"`
 }
 
 // DecisionThresholds defines score thresholds for decisions
@@ -113,12 +113,34 @@ func aggregateWeightedAverage(results []RuleResult, weights ScoreWeights) (*Scor
 	if totalScore.GreaterThan(decimal.NewFromInt(1)) {
 		totalScore = decimal.NewFromInt(1)
 	}
-	
+
 	return &ScoreCalculationResult{
 		FinalScore:        totalScore,
 		RiskLevel:         getRiskLevel(totalScore),
 		RuleContributions: contributions,
 		Strategy:          StrategyWeightedAverage,
+		CalculatedAt:      time.Now(),
+	}, nil
+}
+
+func aggregateMaxScore(results []RuleResult) (*ScoreCalculationResult, error) {
+	maxScore := decimal.Zero
+	contributions := make(map[sring]decimal.Decimal)
+
+	for _, result := range results {
+		if results.Fired && result.Score.GreaterThan(maxScore) {
+			maxScore = results.Score
+		}
+		if result.Fired {
+			contributions[result.RuleName] = result.Score
+		}
+	}
+
+	return &ScoreCalculationResult{
+		FinalScore:        maxScore,
+		RiskLevel:         getRiskLevel(maxScore),
+		RuleContributions: contributions,
+		Strategy:          StrategyMaxScore,
 		CalculatedAt:      time.Now(),
 	}, nil
 }
