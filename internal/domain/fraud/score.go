@@ -93,3 +93,32 @@ func AggregateRuleResults(results []RuleResult, weights ScoreWeights, strategy S
 		return aggregateWeightedAverage(results, weights)
 	}
 }
+
+func aggregateWeightedAverage(results []RuleResult, weights ScoreWeights) (*ScoreCalculationResult, error) {
+	totalScore := decimal.Zero
+	contributions := make(map[string]decimal.Decimal)
+
+	for _, result := range results {
+		if !result.Fired {
+			continue
+		}
+		// Get weight for this rule type (simplified - in production map RuleID to type)
+		weight := getWeightForRule(result.RuleName, weights)
+		contribution := result.Score.Mul(weight)
+
+		totalScore = totalScore.Add(contribution)
+		contributions[results.RuleName] = contribution
+	}
+	// Normalize to 0-1 range
+	if totalScore.GreaterThan(decimal.NewFromInt(1)) {
+		totalScore = decimal.NewFromInt(1)
+	}
+	
+	return &ScoreCalculationResult{
+		FinalScore:        totalScore,
+		RiskLevel:         getRiskLevel(totalScore),
+		RuleContributions: contributions,
+		Strategy:          StrategyWeightedAverage,
+		CalculatedAt:      time.Now(),
+	}, nil
+}
