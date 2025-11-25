@@ -35,4 +35,19 @@ var (
 
 	// ErrDuplicateTransaction is returned when a duplicate transaction is detected
 	ErrDuplicateTransaction = errors.New("duplicate transaction detected")
+
+	// ErrInvalidTransaction is returned when transaction validation fails
+	ErrInvalidTransaction = errors.New("invalid transaction")
+
+	// ErrAmountTooSmall is returned when amount is below minimum
+	ErrAmountTooSmall = errors.New("transaction amount is below minimum")
+
+	// ErrAmountTooLarge is returned when amount exceeds maximum
+	ErrAmountTooLarge = errors.New("transaction amount exceeds maximum")
+
+	// ErrInvalidCurrency is returned when currency code is invalid
+	ErrInvalidCurrency = errors.New("invalid currency code")
+
+	// ErrInvalidTransactionType is returned when transaction type is invalid
+	ErrInvalidTransactionType = errors.New("invalid transaction type")
 )
