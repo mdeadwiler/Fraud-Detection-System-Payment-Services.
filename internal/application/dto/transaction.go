@@ -32,4 +32,14 @@ CreatedAt time.Time `json:"created_at"`
 ProcessedAt *time.Time `json:"processed_at,omitempty"`
 }
 
+//GeoLocationDTO represents geographic location data
+type GeoLocation struct {
+	Latitude float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+	Country string `json:"country"`
+	City string `json:"city"`
+	Region string `json:"region"`
+	IPAddress string `json:"ip_address"`
+}
+
 
