@@ -124,7 +124,7 @@ func (uc *ProcessTransactionUseCase) buildEvaluationContext(
 		return nil
 	})
 
-	// Fetch 2: Velocity check (Redis - fast)
+	// Velocity check (Redis)
 	g.Go(func() error {
 		result, err := uc.txService.CheckVelocity(gctx, tx.UserID, tx.Amount)
 		if err != nil {
