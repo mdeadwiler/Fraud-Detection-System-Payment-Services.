@@ -8,47 +8,77 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// Create trasaction request represents a request to create a new transaction for detection
-
+// CreateTreansactionRequests represents a request to create a new transaction for detection
 type CreateTreansactionRequests struct {
-ExternalID string `json:"external_id" validate:"required"`
-UserID uuid.UUID `json:"user_id" validate:"required"`
-AccountID uuid.UUID `json:"account_id" validate:"required"`
-Type string `json:"type" validate:"required,oneof=purchase refund withdraw deposit trasfer"`
-Amount decimal.Decimal `json:"amount" validate:"required"`
-Currency string `json:"currency" validate:"required,len=3"`
-Description string `json:"description"`
+	ExternalID  string          `json:"external_id" validate:"required"`
+	UserID      uuid.UUID       `json:"user_id" validate:"required"`
+	AccountID   uuid.UUID       `json:"account_id" validate:"required"`
+	Type        string          `json:"type" validate:"required,oneof=purchase refund withdraw deposit transfer"`
+	Amount      decimal.Decimal `json:"amount" validate:"required"`
+	Currency    string          `json:"currency" validate:"required,len=3"`
+	Description string          `json:"description"`
 
-// Fraud Detection Results
-FraudScore *decimal.Decimal `json:"fraud_score,omitempty"`
-RiskLevel string `json:"risk_level,omitempty"`
-FraudReasons string `json:"fraud_reasons,omitempty"`
-RequiredReview bool `json:"required_review"`
-
-//Perfomance metrics
-ProcessingTimeMs int64 `json:"processing_time_ms"`
-
-CreatedAt time.Time `json:"created_at"`
-ProcessedAt *time.Time `json:"processed_at,omitempty"`
+	// Context for fraud detection
+	Location *GeoLocation   `json:"location,omitempty"`
+	Device   *DeviceInfoDTO `json:"device,omitempty"`
+	Merchant *MerchantDTO   `json:"merchant,omitempty"`
+	Payment  *PaymentDTO    `json:"payment,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
-// GeoLocationDTO represents geographic location data
+// TransactionResponse represents the transaction result with fraud analysis
+type TransactionResponse struct {
+	ID          uuid.UUID       `json:"id"`
+	ExternalID  string          `json:"external_id"`
+	UserID      uuid.UUID       `json:"user_id"`
+	AccountID   uuid.UUID       `json:"account_id"`
+	Type        string          `json:"type"`
+	Status      string          `json:"status"`
+	Amount      decimal.Decimal `json:"amount"`
+	Currency    string          `json:"currency"`
+	Description string          `json:"description"`
+
+	// Fraud detection results
+	FraudScore     *decimal.Decimal `json:"fraud_score,omitempty"`
+	RiskLevel      string           `json:"risk_level,omitempty"`
+	FraudReasons   []string         `json:"fraud_reasons,omitempty"`
+	RequiresReview bool             `json:"requires_review"`
+
+	// Performance metrics
+	ProcessingTimeMs int64 `json:"processing_time_ms"`
+
+	CreatedAt   time.Time  `json:"created_at"`
+	ProcessedAt *time.Time `json:"processed_at,omitempty"`
+}
+
+// GeoLocation represents geographic location data
 type GeoLocation struct {
-	Latitude float64 `json:"latitude"`
+	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
-	Country string `json:"country"`
-	City string `json:"city"`
-	Region string `json:"region"`
-	IPAddress string `json:"ip_address"`
+	Country   string  `json:"country"`
+	City      string  `json:"city"`
+	Region    string  `json:"region,omitempty"`
+	IPAddress string  `json:"ip_address"`
+}
+
+// DeviceInfoDTO represents device information
+type DeviceInfoDTO struct {
+	DeviceID      string `json:"device_id"`
+	Fingerprint   string `json:"fingerprint"`
+	Type          string `json:"type"`
+	OS            string `json:"os"`
+	Browser       string `json:"browser,omitempty"`
+	UserAgent     string `json:"user_agent"`
+	TrustedDevice bool   `json:"trusted_device"`
 }
 
 // MerchantDTO represents merchant information
 type MerchantDTO struct {
-	MerchantId string `json:"type"`
-	Name string `json:"name"`
-	Category string `json:"category"`
-	Country string `json:"country"`
-	RiskScore string `json:"risk_score,omitempty"`
+	MerchantID string `json:"merchant_id"`
+	Name       string `json:"name"`
+	Category   string `json:"category"`
+	Country    string `json:"country"`
+	RiskScore  string `json:"risk_score,omitempty"`
 }
 
 // PaymentDTO for payment information
