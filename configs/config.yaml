@@ -1,0 +1,89 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: 15s
+  write_timeout: 15s
+  shutdown_timeout: 30s
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "fraud_user"
+  password: "fraud_password"
+  name: "fraud_detection"
+  ssl_mode: "disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 5m
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+  read_timeout: 3s
+  write_timeout: 3s
+
+kafka:
+  brokers:
+    - "localhost:9092"
+  transactions_topic: "transactions"
+  fraud_alerts_topic: "fraud-alerts"
+  consumer_group: "fraud-detection-service"
+
+fraud:
+  # Decision thresholds (0.0 - 1.0)
+  block_threshold: 0.80
+  review_threshold: 0.60
+  challenge_threshold: 0.40
+
+  # Score weights (should sum to ~1.0)
+  velocity_weight: 0.25
+  amount_weight: 0.15
+  geographic_weight: 0.20
+  device_weight: 0.15
+  merchant_weight: 0.10
+  behavioral_weight: 0.10
+  ml_weight: 0.05
+
+  # Velocity limits
+  max_transactions_per_minute: 5
+  max_transactions_per_hour: 30
+  max_amount_per_day: 10000
+
+  # Geographic settings
+  allowed_countries:
+    - "US"
+    - "CA"
+    - "GB"
+    - "DE"
+    - "FR"
+    - "AU"
+    - "JP"
+  blocked_countries:
+    - "KP"  # North Korea
+    - "IR"  # Iran
+    - "SY"  # Syria
+  max_distance_km: 500
+
+  # High-value threshold
+  high_value_threshold: 1000
+
+  # Analysis timeout
+  analysis_timeout: 5s
+
+ml:
+  model_path: "./models/fraud_model.bin"
+  model_version: "v1.0.0"
+  feature_cache_ttl: 5m
+  enabled: false  # Enable when ML model is available
+
+metrics:
+  enabled: true
+  path: "/metrics"
+
+log:
+  level: "info"
+  format: "json"
+
