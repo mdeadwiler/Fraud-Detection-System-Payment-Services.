@@ -39,7 +39,7 @@ func NewService(
 		scorer:             scorer,
 		decisionThresholds: DefaultDecisionThresholds(),
 		scoreWeights:       DefaultScoreWeights(),
-		scoringStrategy:    StrategyWeightedAverage,
+		scoringStrategy:    StrategyMaxScore, // Use max score - more appropriate for fraud detection
 	}
 }
 

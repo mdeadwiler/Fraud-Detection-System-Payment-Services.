@@ -9,7 +9,6 @@ import (
 	"github.com/shopspring/decimal"
 
 	"fraud-detecction-system/internal/domain/fraud"
-	"fraud-detecction-system/internal/domain/transaction"
 	"fraud-detecction-system/internal/infrastructure/cache/redis"
 	"fraud-detecction-system/internal/infrastructure/ml"
 	"fraud-detecction-system/internal/infrastructure/rules"

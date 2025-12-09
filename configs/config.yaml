@@ -50,7 +50,7 @@ fraud:
   # Velocity limits
   max_transactions_per_minute: 5
   max_transactions_per_hour: 30
-  max_amount_per_day: 10000
+  max_amount_per_day: "10000"  # String for decimal parsing
 
   # Geographic settings
   allowed_countries:
@@ -68,7 +68,7 @@ fraud:
   max_distance_km: 500
 
   # High-value threshold
-  high_value_threshold: 1000
+  high_value_threshold: "1000"  # String for decimal parsing
 
   # Analysis timeout
   analysis_timeout: 5s

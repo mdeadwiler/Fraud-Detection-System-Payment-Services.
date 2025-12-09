@@ -108,7 +108,7 @@ func main() {
 
 	// Initialize ML predictor
 	featureExtractor := ml.NewFeatureExtractor(
-		cfg.Fraud.HighValueThreshold,
+		cfg.Fraud.GetHighValueThreshold(),
 		cfg.Fraud.BlockedCountries,
 	)
 	mlPredictor := ml.NewPredictor(featureExtractor, cfg.ML.ModelVersion, cfg.ML.Enabled)
@@ -412,6 +412,20 @@ func (r *MockRuleRepository) seedDefaultRules() {
 	)
 	behaviorRule.Config = map[string]interface{}{}
 	r.rules[behaviorRule.ID.String()] = behaviorRule
+
+	// Merchant rule
+	merchantRule := fraud.NewRule(
+		"high_risk_merchant",
+		"Review transactions with high-risk merchants",
+		fraud.RuleTypeMerchant,
+		fraud.SeverityMedium,
+		fraud.ActionReview,
+		uuid.Nil,
+	)
+	merchantRule.Config = map[string]interface{}{
+		"high_risk_mcc_codes": []interface{}{"7995", "7801", "5967", "6051"},
+	}
+	r.rules[merchantRule.ID.String()] = merchantRule
 }
 
 func (r *MockRuleRepository) Create(ctx context.Context, rule *fraud.Rule) error {

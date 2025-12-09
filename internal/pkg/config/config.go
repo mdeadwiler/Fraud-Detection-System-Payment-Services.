@@ -76,9 +76,9 @@ type FraudConfig struct {
 	MLWeight         float64 `mapstructure:"ml_weight"`
 
 	// Velocity limits
-	MaxTransactionsPerMinute int             `mapstructure:"max_transactions_per_minute"`
-	MaxTransactionsPerHour   int             `mapstructure:"max_transactions_per_hour"`
-	MaxAmountPerDay          decimal.Decimal `mapstructure:"max_amount_per_day"`
+	MaxTransactionsPerMinute int    `mapstructure:"max_transactions_per_minute"`
+	MaxTransactionsPerHour   int    `mapstructure:"max_transactions_per_hour"`
+	MaxAmountPerDay          string `mapstructure:"max_amount_per_day"` // String for YAML compatibility
 
 	// Geographic settings
 	AllowedCountries []string `mapstructure:"allowed_countries"`
@@ -86,10 +86,28 @@ type FraudConfig struct {
 	MaxDistanceKm    float64  `mapstructure:"max_distance_km"`
 
 	// High-value thresholds
-	HighValueThreshold decimal.Decimal `mapstructure:"high_value_threshold"`
+	HighValueThreshold string `mapstructure:"high_value_threshold"` // String for YAML compatibility
 
 	// Analysis timeout
 	AnalysisTimeout time.Duration `mapstructure:"analysis_timeout"`
+}
+
+// GetMaxAmountPerDay returns the max amount per day as decimal
+func (c *FraudConfig) GetMaxAmountPerDay() decimal.Decimal {
+	d, err := decimal.NewFromString(c.MaxAmountPerDay)
+	if err != nil {
+		return decimal.NewFromInt(10000)
+	}
+	return d
+}
+
+// GetHighValueThreshold returns the high value threshold as decimal
+func (c *FraudConfig) GetHighValueThreshold() decimal.Decimal {
+	d, err := decimal.NewFromString(c.HighValueThreshold)
+	if err != nil {
+		return decimal.NewFromInt(1000)
+	}
+	return d
 }
 
 // MLConfig holds ML model configuration
@@ -161,11 +179,11 @@ func DefaultConfig() *Config {
 			MLWeight:                 0.05,
 			MaxTransactionsPerMinute: 5,
 			MaxTransactionsPerHour:   30,
-			MaxAmountPerDay:          decimal.NewFromInt(10000),
+			MaxAmountPerDay:          "10000",
 			AllowedCountries:         []string{"US", "CA", "GB", "DE", "FR"},
 			BlockedCountries:         []string{},
 			MaxDistanceKm:            500,
-			HighValueThreshold:       decimal.NewFromInt(1000),
+			HighValueThreshold:       "1000",
 			AnalysisTimeout:          5 * time.Second,
 		},
 		ML: MLConfig{

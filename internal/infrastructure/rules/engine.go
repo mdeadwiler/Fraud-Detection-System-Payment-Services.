@@ -153,6 +153,11 @@ func (e *Engine) invalidateCache() {
 
 // evaluateVelocityRule checks transaction frequency limits
 func (e *Engine) evaluateVelocityRule(ctx context.Context, rule *fraud.Rule, evalCtx *fraud.RuleEvaluationContext) (*fraud.RuleResult, error) {
+	// Skip if velocity cache is not available
+	if e.velocityCache == nil {
+		return fraud.NewRuleResult(rule.ID, rule.Name, false, decimal.Zero, "Velocity check skipped (cache unavailable)", fraud.ActionAllow), nil
+	}
+
 	config := parseVelocityConfig(rule.Config)
 
 	windowDuration := time.Duration(config.WindowMinutes) * time.Minute
@@ -312,7 +317,7 @@ func (e *Engine) evaluateDeviceRule(ctx context.Context, rule *fraud.Rule, evalC
 
 	// Check if device is trusted
 	if config.RequireTrustedDevice && !evalCtx.Device.IsTrustedDevice {
-		// Check if it's a known device
+		// If device cache is available, check if it's known
 		if e.deviceCache != nil {
 			isKnown, err := e.deviceCache.IsKnownDevice(ctx, evalCtx.UserID, evalCtx.Device.DeviceID)
 			if err == nil && !isKnown {
@@ -329,6 +334,13 @@ func (e *Engine) evaluateDeviceRule(ctx context.Context, rule *fraud.Rule, evalC
 				result.AddMetadata("device_id", evalCtx.Device.DeviceID)
 				return result, nil
 			}
+		} else {
+			// No cache available - flag untrusted device with lower confidence
+			score := decimal.NewFromFloat(0.45)
+			reason := "Transaction from untrusted device (verification unavailable)"
+			result := fraud.NewRuleResult(rule.ID, rule.Name, true, score, reason, fraud.ActionChallenge)
+			result.AddMetadata("device_id", evalCtx.Device.DeviceID)
+			return result, nil
 		}
 	}
 
