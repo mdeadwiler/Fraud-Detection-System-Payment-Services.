@@ -425,7 +425,7 @@ func (r *RuleRepository) Update(ctx context.Context, rule *fraud.Rule) error {
 // ListActive retrieves all enabled rules
 func (r *RuleRepository) ListActive(ctx context.Context) ([]*fraud.Rule, error) {
 	var models []RuleModel
-	now := time.Now()
+	now := time.Now().UTC() // Use UTC to match database timestamps
 	if err := r.db.WithContext(ctx).
 		Where("enabled = ? AND effective_at <= ? AND (expires_at IS NULL OR expires_at > ?)", true, now, now).
 		Find(&models).Error; err != nil {

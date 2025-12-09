@@ -1,393 +1,97 @@
 # Fraud Detection System for Payment Services
 
-**Status:** In Development
-
-A high-performance, scalable fraud detection system designed for payment processing platforms handling transactions from multiple banking institutions. Built with Go, this system provides real-time fraud analysis, machine learning-based detection, and comprehensive transaction monitoring capabilities.
-
-## Overview
-
-This fraud detection system is engineered to process high-volume payment transactions across multiple banking networks. It employs a combination of rule-based detection, machine learning models, and behavioral analysis to identify potentially fraudulent activities in real-time.
-
-### Key Capabilities
-
-- Real-time transaction analysis and fraud scoring
-- Multi-bank integration support with adapter pattern
-- Machine learning model deployment and inference
-- Rule-based fraud detection engine
-- Geographic and behavioral anomaly detection
-- Scalable microservices architecture
-- High-throughput event streaming processing
-- Comprehensive audit logging and compliance reporting
+Real-time fraud detection engine for payment transaction analysis. Evaluates transactions against configurable rules, calculates risk scores, and returns actionable decisions (allow, block, review, challenge).
 
 ## Architecture
 
-The system follows Clean Architecture principles with clear separation of concerns across multiple layers:
-
-- **Domain Layer**: Core business logic and entities
-- **Application Layer**: Use cases and business workflows
-- **Infrastructure Layer**: External integrations (databases, message queues, APIs)
-- **Interface Layer**: HTTP/gRPC handlers and API endpoints
-
-### Architecture Patterns
-
-- Domain-Driven Design (DDD)
-- Hexagonal Architecture (Ports and Adapters)
-- Repository Pattern
-- CQRS (Command Query Responsibility Segregation) ready
-- Event-Driven Architecture
-- Microservices Architecture
-
-For detailed architecture documentation, see [docs/architecture/overview.md](docs/architecture/overview.md).
-
-## Technology Stack
-
-### Core Technologies
-
-- **Language**: Go 1.25+
-- **Databases**: PostgreSQL 14+, MySQL 8+
-- **Cache**: Redis 7+
-- **Message Queue**: Apache Kafka, RabbitMQ, NATS
-- **API**: REST (Gin/Chi), gRPC
-
-### Infrastructure
-
-- **Containerization**: Docker
-- **Orchestration**: Kubernetes
-- **CI/CD**: GitHub Actions
-- **Infrastructure as Code**: Terraform
-- **Monitoring**: Prometheus, Grafana
-- **Tracing**: OpenTelemetry, Jaeger
-- **Logging**: Zap, ELK Stack
-
-### Key Libraries
-
-- `github.com/shopspring/decimal` - Precise decimal calculations
-- `github.com/gin-gonic/gin` - HTTP web framework
-- `github.com/jackc/pgx/v5` - PostgreSQL driver
-- `github.com/redis/go-redis/v9` - Redis client
-- `github.com/segmentio/kafka-go` - Kafka client
-- `go.uber.org/zap` - Structured logging
-- `github.com/prometheus/client_golang` - Prometheus metrics
-- `gonum.org/v1/gonum` - Machine learning and statistics
-
-For complete dependency list, see [go.mod](go.mod).
-
-## Project Structure
-
 ```
-fraud-detection-system/
-├── cmd/                     # Application entry points
-│   ├── api/                # REST API service
-│   ├── worker/             # Background worker
-│   ├── stream-processor/   # Kafka stream processor
-│   ├── ml-engine/          # ML model service
-│   └── migrate/            # Database migrations
-├── internal/               # Private application code
-│   ├── domain/            # Domain models and business logic
-│   ├── application/       # Use cases and workflows
-│   ├── infrastructure/    # External service integrations
-│   ├── interfaces/        # API handlers and adapters
-│   └── pkg/               # Internal shared packages
-├── pkg/                    # Public packages
-├── api/                    # API specifications (OpenAPI, protobuf)
-├── migrations/             # Database migrations
-├── deployments/            # Deployment configurations
-├── docs/                   # Documentation
-├── test/                   # Test files
-└── configs/                # Configuration files
+cmd/api/                    Application entry point
+internal/
+  domain/fraud/             Business logic and entities
+  application/fraud/        Use cases
+  infrastructure/
+    database/postgres/      PostgreSQL repositories
+    cache/redis/            Velocity and device caching
+    rules/                  Rule evaluation engine
+    ml/                     Feature extraction and prediction
+  interfaces/http/          REST API handlers
 ```
 
-For detailed structure information, see [STRUCTURE_VERIFICATION.md](STRUCTURE_VERIFICATION.md).
+## Requirements
 
-## Prerequisites
+- Go 1.21+
+- PostgreSQL 15+
+- Redis 7+
 
-### Required
-
-- Go 1.25 or higher
-- PostgreSQL 14 or higher
-- Redis 7 or higher
-- Docker and Docker Compose (for local development)
-
-### Optional
-
-- Kafka (for event streaming)
-- Kubernetes (for production deployment)
-- Terraform (for infrastructure provisioning)
-
-## Installation
-
-### 1. Clone the Repository
+## Quick Start
 
 ```bash
-git clone https://github.com/your-org/fraud-detection-system.git
-cd fraud-detection-system
+# Start dependencies
+docker-compose -f docker-compose.dev.yml up -d
+
+# Build
+go build -o fraud-api ./cmd/api/main.go
+
+# Run
+./fraud-api -config configs/config.yaml
 ```
 
-### 2. Install Dependencies
+## API
 
+### Analyze Transaction
 ```bash
-go mod download
-go mod verify
+POST /api/v1/fraud/analyze
 ```
 
-### 3. Install Development Tools
-
+### Batch Analysis
 ```bash
-make install-tools
+POST /api/v1/fraud/analyze/batch
 ```
 
-### 4. Set Up Environment
-
+### Rules Management
 ```bash
-cp configs/.env.example .env
-# Edit .env with your configuration
+GET  /api/v1/fraud/rules
+POST /api/v1/fraud/rules
+```
+
+### Case Management
+```bash
+GET /api/v1/fraud/cases
+PUT /api/v1/fraud/cases/{id}
 ```
 
 ## Configuration
 
-The application supports multiple configuration sources:
-
-1. **YAML Files**: `configs/config.{env}.yaml`
-2. **Environment Variables**: `.env` file or system environment
-3. **Command Line Flags**: Override specific settings
-
-### Configuration Priority
-
-Command Line Flags > Environment Variables > Config File > Defaults
-
-See [configs/config.yaml](configs/config.yaml) for complete configuration options.
-
-## Running the Application
-
-### Local Development with Docker Compose
-
-```bash
-# Start all services
-make docker-up
-
-# Or manually
-docker-compose -f deployments/docker-compose/docker-compose.yml up
-```
-
-### Running Services Individually
-
-```bash
-# Run database migrations
-make migrate-up
-
-# Start API server
-make run-api
-
-# Start background worker
-make run-worker
-
-# Start stream processor
-make run-stream-processor
-
-# Start ML engine
-make run-ml-engine
-```
-
-### With Live Reload
-
-```bash
-air -c .air.toml
-```
-
-## Development
-
-### Code Style
-
-```bash
-# Format code
-make fmt
-
-# Run linters
-make lint
-
-# Run static analysis
-make vet
-```
-
-### Generating Code
-
-```bash
-# Generate protocol buffers
-make generate-proto
-
-# Generate mocks for testing
-make generate-mocks
-
-# Generate Swagger documentation
-make generate-swagger
-```
-
-### Pre-commit Checks
-
-```bash
-make pre-commit
-```
-
-## Testing
-
-### Running Tests
-
-```bash
-# Run all tests
-make test
-
-# Run unit tests only
-make test-unit
-
-# Run integration tests
-make test-integration
-
-# Run e2e tests
-make test-e2e
-
-# Generate coverage report
-make test-coverage
-```
-
-### Load Testing
-
-```bash
-# Run load tests with Vegeta
-make load-test-vegeta
-
-# Run load tests with K6
-make load-test-k6
-```
-
-See [docs/development/testing.md](docs/development/testing.md) for testing guidelines.
-
-## API Documentation
-
-### REST API
-
-- **Base URL**: `http://localhost:8080/api/v1`
-- **Swagger UI**: `http://localhost:8080/swagger/index.html`
-- **OpenAPI Spec**: [api/openapi/v1/swagger.yaml](api/openapi/v1/swagger.yaml)
-
-### gRPC API
-
-- **Port**: `9090`
-- **Protobuf Definitions**: [api/proto/](api/proto/)
-
-### Key Endpoints
-
-```
-POST   /api/v1/transactions          # Process new transaction
-GET    /api/v1/transactions/:id      # Get transaction details
-POST   /api/v1/fraud/analyze         # Analyze transaction for fraud
-GET    /api/v1/fraud/cases           # List fraud cases
-PUT    /api/v1/fraud/cases/:id       # Update fraud case
-GET    /health                        # Health check
-GET    /metrics                       # Prometheus metrics
-```
-
-See [docs/api/rest-api.md](docs/api/rest-api.md) for complete API documentation.
-
-## Deployment
-
-### Docker
-
-```bash
-# Build all Docker images
-make docker-build
-
-# Build specific service
-docker build -f deployments/docker/Dockerfile.api -t fraud-detection-api .
-```
-
-### Kubernetes
-
-```bash
-# Deploy to development
-kubectl apply -k deployments/kubernetes/overlays/dev
-
-# Deploy to production
-kubectl apply -k deployments/kubernetes/overlays/production
-```
-
-### Terraform
-
-```bash
-cd deployments/terraform/environments/production
-terraform init
-terraform plan
-terraform apply
-```
-
-See [docs/deployment/](docs/deployment/) for detailed deployment guides.
-
-## Monitoring
-
-### Metrics
-
-Prometheus metrics are exposed at `/metrics` endpoint:
-
-- Transaction processing metrics
-- Fraud detection metrics
-- System performance metrics
-- Business metrics
-
-### Logging
-
-Structured JSON logging with contextual information for all operations.
-
-### Distributed Tracing
-
-OpenTelemetry integration with Jaeger for distributed tracing across services.
-
-See [docs/deployment/monitoring.md](docs/deployment/monitoring.md) for monitoring setup.
-
-## Security
-
-### Authentication & Authorization
-
-- JWT-based authentication for REST API
-- mTLS for gRPC communication
-- API key authentication for external integrations
-- Role-based access control (RBAC)
-
-### Data Security
-
-- Encryption at rest (database encryption)
-- Encryption in transit (TLS 1.3)
-- PII data masking in logs
-- Secure credential management
-
-### Compliance
-
-- PCI DSS compliance ready
-- GDPR compliant data handling
-- Audit logging for all transactions
-- Data retention policies
-
-## Contributing
-
-We welcome contributions. Please see [docs/development/contributing.md](docs/development/contributing.md) for guidelines.
+Environment variables override `configs/config.yaml`:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `FRAUD_DB_HOST` | PostgreSQL host | localhost |
+| `FRAUD_DB_PORT` | PostgreSQL port | 5432 |
+| `FRAUD_REDIS_HOST` | Redis host | localhost |
+| `FRAUD_REDIS_PORT` | Redis port | 6379 |
+| `FRAUD_SERVER_PORT` | API port | 8080 |
+
+## Rule Types
+
+| Type | Description |
+|------|-------------|
+| velocity | Transaction frequency limits |
+| amount | Transaction value thresholds |
+| geographic | Location-based restrictions |
+| device | Device trust verification |
+| merchant | Merchant risk assessment |
+| behavioral | User pattern analysis |
+
+## Decision Thresholds
+
+| Score | Decision |
+|-------|----------|
+| >= 0.80 | Block |
+| >= 0.60 | Review |
+| >= 0.40 | Challenge |
+| < 0.40 | Allow |
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For questions or issues:
-
-- **Documentation**: [docs/](docs/)
-- **Issue Tracker**: GitHub Issues
-
-## Acknowledgments
-
-Built with industry best practices from:
-
-- Clean Architecture (Robert C. Martin)
-- Domain-Driven Design (Eric Evans)
-- Microservices Patterns (Chris Richardson)
-
----
-
-Last Updated: 2025-01-17
+See LICENSE file.
